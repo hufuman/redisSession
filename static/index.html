@@ -1,0 +1,128 @@
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>Redis Session</title>
+    <!-- Bootstrap -->
+    <link href="./bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
+    <script src="http://code.jquery.com/jquery-latest.js"></script>
+    <script src="./bootstrap/js/bootstrap.min.js"></script>
+</head>
+<body>
+<form method="post" action="#" onsubmit="javascript:return false">
+	<div>
+		<span id="txtTip"></span>
+		<span id="txtCount"></span>
+	</div>
+	<br/>
+	name: <input type="text" id="ssName" value="ssName" ></input>
+	<br/>
+	value: <input type="text" id="ssValue" value="ssValue" ></input>
+	<br/>
+	result: <input type="text" id="ssResult" value="ssResult" ></input>
+	<br/><br/>
+	<button class="btn btn-large" id="btnset" >设置</button>
+	<button class="btn btn-large" id="btnget" >获取</button>
+	<br />
+	<img src="./loading.gif" id="imgLoading"></img>
+</form>
+
+<script type="text/javascript">
+
+	var req_count = 10;
+	var req_interval = null;
+	function onRequest()
+	{
+		req_count = 10;
+		if(req_interval)
+		{
+			clearInterval(req_interval);
+			req_interval = null;
+		}
+		$("#txtCount").text("，倒数：" + req_count + "s");
+		$("#txtCount").show();
+		req_interval = setInterval(function()
+		{
+			-- req_count;
+			$("#txtCount").text("，倒数：" + req_count + "s");
+			if(req_count < 0)
+			{
+				clearInterval(req_interval);
+				req_interval = null;
+				$("#txtCount").hide();
+			}
+		}, 1000);
+	}
+
+	$("#imgLoading").hide();
+	function onsetcallback(result, data)
+	{
+		onRequest();
+     	$("#imgLoading").hide();
+		if(result)
+		{
+			$("#txtTip").text("设置成功");
+		}
+		else
+		{
+		    $("#txtTip").text("设置失败");
+		}
+	}
+	$("#btnset").click(function()
+	{
+		$("#imgLoading").show();
+		$("#txtTip").text("开始设置");
+		var ssName = $("#ssName").val();
+		var ssValue = $("#ssValue").val();
+		//make another request
+		$.ajax({ cache: false
+		     , type: "POST"
+		     , url: "/setsession.do"
+		     , dataType: "json"
+		     , data: { ssName : ssName, ssValue : ssValue }
+		     , error: function () {
+		     	onsetcallback(false, null);
+		       }
+		     , success: function (data) {
+		     	onsetcallback(true, data);
+		       }
+		     });
+	});
+
+	function ongetcallback(result, data)
+	{
+		onRequest();
+		$("#imgLoading").hide();
+		if(result)
+		{
+			$("#txtTip").text("获取成功");
+			$("#ssResult").val(data.value);
+		}
+		else
+		{
+	        $("#txtTip").text("获取失败");
+			$("#ssResult").val("获取失败");
+		}
+	}
+	$("#btnget").click(function()
+	{
+		$("#ssResult").val("retrieving...");
+		$("#imgLoading").show();
+		$("#txtTip").text("开始获取");
+		var ssName = $("#ssName").val();
+		//make another request
+		$.ajax({ cache: false
+		     , type: "POST"
+		     , url: "/getsession.do"
+		     , dataType: "json"
+		     , data: { ssName : ssName }
+		     , error: function () {
+		     	ongetcallback(false, null);
+		       }
+		     , success: function (data) {
+		     	ongetcallback(true, data);
+		       }
+		     });
+	});
+</script>
+</body>
+</html>
